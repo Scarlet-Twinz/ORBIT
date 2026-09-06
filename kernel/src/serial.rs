@@ -12,7 +12,10 @@ pub fn init() {
 pub fn _print(args: fmt::Arguments<'_>) {
     use fmt::Write;
 
-    SERIAL1.lock().write_fmt(args).expect("serial output failed");
+    SERIAL1
+        .lock()
+        .write_fmt(args)
+        .expect("serial output failed");
 }
 
 #[macro_export]
