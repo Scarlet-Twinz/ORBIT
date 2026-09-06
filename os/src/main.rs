@@ -6,7 +6,12 @@ fn main() -> ExitCode {
     println!("ORBIT OS image: {image}");
 
     match Command::new("qemu-system-x86_64")
-        .args(["-drive", &format!("format=raw,file={image}"), "-serial", "stdio"])
+        .args([
+            "-drive",
+            &format!("format=raw,file={image}"),
+            "-serial",
+            "stdio",
+        ])
         .status()
     {
         Ok(status) => status
@@ -15,7 +20,9 @@ fn main() -> ExitCode {
             .unwrap_or(ExitCode::FAILURE),
         Err(error) => {
             eprintln!("Unable to start QEMU: {error}");
-            eprintln!("Build succeeded. Install QEMU and make qemu-system-x86_64 available on PATH to boot ORBIT.");
+            eprintln!(
+                "Build succeeded. Install QEMU and make qemu-system-x86_64 available on PATH to boot ORBIT."
+            );
             ExitCode::SUCCESS
         }
     }
