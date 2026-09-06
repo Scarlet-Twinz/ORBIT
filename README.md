@@ -2,50 +2,46 @@
 
 **A small x86_64 operating-system kernel written from scratch in Rust.**
 
-ORBIT explores the foundations beneath application software: bootstrapping, memory management, interrupts, task scheduling, system calls, and low-level hardware interaction.
+ORBIT is a bare-metal systems project focused on the mechanisms beneath application software: bootstrapping, memory management, interrupt handling, scheduling, system calls, storage, and low-level hardware interaction.
 
-The repository separates the bare-metal kernel from the host-side image builder so the kernel can remain a `no_std` target while the build tooling runs normally on the development machine.
+The repository deliberately separates the `no_std` kernel from the host-side image builder. This keeps platform-specific kernel code isolated while allowing the development tooling to use the normal Rust standard library.
 
 ## Architecture
 
 ```text
-                 ┌─────────────────────┐
-                 │     Host / Cargo     │
-                 │      orbit-os       │
-                 └──────────┬──────────┘
-                            │
-                     bootloader image
-                            │
-                 ┌──────────▼──────────┐
-                 │      Bootloader      │
-                 └──────────┬──────────┘
-                            │
-                 ┌──────────▼──────────┐
-                 │     ORBIT Kernel     │
-                 │     x86_64/no_std    │
-                 └──────────┬──────────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-         VGA text output            COM1 serial
-              │                           │
-              └─────────────┬─────────────┘
-                            │
-                    Future subsystems
-                            │
-        ┌───────────────────┼───────────────────┐
-        │                   │                   │
-     Memory              Interrupts          Scheduler
-        │                   │                   │
-        └───────────────────┼───────────────────┘
-                            │
-                       System Calls
-                            │
-                     User / Kernel Mode
-                            │
-                    Filesystem / Drivers
-                            │
-                       User Programs
+                         Host / Cargo
+                              │
+                         orbit-os crate
+                              │
+                       BIOS disk image
+                              │
+                         bootloader
+                              │
+                    ┌─────────▼─────────┐
+                    │    ORBIT Kernel   │
+                    │ x86_64 / no_std   │
+                    └─────────┬─────────┘
+                              │
+              ┌──────────────┴──────────────┐
+              │                             │
+        Framebuffer                    COM1 serial
+          console                        console
+              │                             │
+              └──────────────┬──────────────┘
+                             │
+                     Kernel subsystems
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+     Memory              Interrupts           Execution
+        │                    │                    │
+        └────────────────────┼────────────────────┘
+                             │
+                      System-call ABI
+                             │
+                     Storage / Drivers
+                             │
+                        User space
 ```
 
 ## Repository Layout
@@ -53,86 +49,90 @@ The repository separates the bare-metal kernel from the host-side image builder 
 ```text
 ORBIT/
 ├── .cargo/
-│   └── config.toml       # Bare-metal target configuration
+│   └── config.toml          # Bare-metal target configuration
 ├── .github/
 │   └── workflows/
-│       └── ci.yml        # Formatting and kernel build checks
+│       └── ci.yml           # Formatting and build validation
 ├── kernel/
-│   ├── Cargo.toml        # no_std kernel crate
+│   ├── Cargo.toml           # no_std kernel crate
 │   └── src/
-│       ├── main.rs       # Kernel entry point and boot sequence
-│       ├── serial.rs     # COM1 serial console
-│       └── vga.rs        # VGA text-mode output
+│       ├── main.rs          # Kernel entry point and boot sequence
+│       ├── serial.rs        # COM1 serial console
+│       └── vga.rs           # Framebuffer console renderer
 ├── os/
-│   ├── Cargo.toml        # Host-side image builder
-│   ├── build.rs          # Creates the bootable BIOS image
+│   ├── Cargo.toml           # Host-side image builder
+│   ├── build.rs             # Creates the bootable BIOS image
 │   └── src/
-│       └── main.rs       # Builds and launches ORBIT with QEMU
-├── Cargo.toml            # Workspace definition
-└── rust-toolchain.toml   # Pinned nightly toolchain components
+│       └── main.rs          # QEMU launcher
+├── Cargo.toml               # Workspace definition
+└── rust-toolchain.toml      # Nightly toolchain and components
 ```
 
-## Current Status
+## Current Milestone
 
-### Phase 1 — Bootstrapping
+### Boot and kernel foundation — complete
 
 - [x] Rust `no_std` kernel binary
-- [x] x86_64 bare-metal target
-- [x] Bootloader integration
-- [x] Workspace separation between kernel and host builder
+- [x] `x86_64-unknown-none` bare-metal target
+- [x] BIOS bootloader integration
+- [x] Separate kernel and host tooling crates
 - [x] Kernel entry point
-- [x] VGA text-mode output
+- [x] Boot-time framebuffer acquisition
+- [x] Pixel-format-aware framebuffer console
+- [x] Synchronized framebuffer access through `spin::Mutex`
 - [x] COM1 serial console
-- [x] Boot status output
+- [x] Structured kernel boot messages
 - [x] QEMU launch path
-- [x] CI build validation
+- [x] CI formatting/build validation
 
-### Phase 2 — Memory
+### Memory subsystem — planned
 
-- [ ] Bootloader memory-map inspection
+- [ ] Bootloader memory-map abstraction
 - [ ] Physical frame allocator
-- [ ] Page-table inspection
+- [ ] Page-table inspection and manipulation
 - [ ] Virtual-memory primitives
 - [ ] Kernel heap allocator
 
-### Phase 3 — Interrupts and Hardware
+### Interrupts and hardware — planned
 
 - [ ] Interrupt Descriptor Table
-- [ ] CPU exception handling
+- [ ] CPU exception handlers
 - [ ] Programmable interval timer
 - [ ] Keyboard driver
-- [ ] Hardware abstraction modules
+- [ ] Hardware abstraction layer
 
-### Phase 4 — Execution
+### Execution — planned
 
-- [ ] Task abstraction
+- [ ] Kernel task abstraction
 - [ ] Context switching
-- [ ] Scheduler
-- [ ] System-call interface
-- [ ] User/kernel boundary
+- [ ] Preemptive scheduler
+- [ ] System-call ABI
+- [ ] User/kernel privilege boundary
 
-### Phase 5 — Storage and User Space
+### Storage and user space — planned
 
-- [ ] Simple filesystem
-- [ ] Executable loading
-- [ ] Interactive kernel shell
+- [ ] Block-device abstraction
+- [ ] Filesystem layer
+- [ ] Executable loader
+- [ ] Interactive shell
 - [ ] Initial user programs
 
-Networking and additional device support will be considered after the core kernel is stable.
+Networking and additional device support will follow once the core execution and memory model is stable.
 
-## Design Principles
+## Engineering Principles
 
-- **Small surface area** — introduce only the mechanism needed for the current subsystem.
-- **Explicit mechanisms** — prefer understandable low-level code over abstraction for its own sake.
-- **Incremental validation** — keep the workspace buildable as each subsystem is introduced.
-- **Observable boot** — use VGA for local visual output and COM1 for machine-readable serial logs.
-- **Document the machine** — explain why the kernel works, not only how to compile it.
+- **Mechanism before abstraction** — kernel abstractions are introduced when the underlying mechanism is understood and testable.
+- **Explicit ownership** — shared kernel state should have a clear synchronization and lifetime model.
+- **Incremental validation** — every subsystem should keep the workspace buildable and bootable.
+- **Observable execution** — the framebuffer provides local visual output while COM1 provides deterministic machine-readable diagnostics.
+- **Architecture-first design** — interfaces are kept narrow so memory, interrupts, execution, drivers, and user space can evolve independently.
+- **Failure visibility** — QEMU is configured not to automatically reboot after a fatal guest failure, making kernel faults diagnosable instead of silently restarting.
 
 ## Toolchain
 
 - Rust nightly
 - `x86_64-unknown-none`
-- `bootloader`
+- `bootloader` 0.11.x
 - QEMU
 - GitHub Actions
 
@@ -140,13 +140,19 @@ The repository declares the required Rust target and components in `rust-toolcha
 
 ## Development
 
-Install Rust through [rustup](https://rustup.rs/) and install QEMU for your platform.
+Install Rust through [rustup](https://rustup.rs/) and QEMU for your platform.
 
-Clone the repository and open it in your editor:
+Clone the repository:
 
 ```bash
 git clone https://github.com/Scarlet-Twinz/ORBIT.git
 cd ORBIT
+```
+
+Format the workspace:
+
+```bash
+cargo fmt --all
 ```
 
 Build the bootable BIOS image:
@@ -161,8 +167,10 @@ Run ORBIT in QEMU:
 cargo run --release -p orbit-os
 ```
 
-`cargo run` builds the kernel, creates the BIOS disk image, and launches `qemu-system-x86_64` with the COM1 serial console attached to the terminal. If QEMU is not installed, the build still succeeds and the generated image path is printed.
+The host crate builds the kernel, creates a BIOS disk image, and launches `qemu-system-x86_64`. The guest exposes its early boot diagnostics through the COM1 serial console and renders its framebuffer console through the bootloader-provided graphics buffer.
 
 ## Project Direction
 
-ORBIT is deliberately being developed as a kernel rather than a desktop environment. The goal is to implement and understand the mechanisms that connect software to the underlying machine, progressing from bootstrapping through memory, interrupts, scheduling, system calls, storage, and user space.
+ORBIT is intentionally a kernel project rather than a desktop environment. The objective is to implement the layers that connect software to the machine and to make each layer observable, testable, and replaceable.
+
+The long-term architecture moves from bootstrapping into memory management, interrupts, execution, system calls, storage, drivers, and user space. The current boot milestone establishes the foundation on which those subsystems can be built without hiding the machine behind a high-level runtime.
