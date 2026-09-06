@@ -4,13 +4,13 @@
 
 ORBIT is a bare-metal systems project focused on the mechanisms beneath application software: bootstrapping, physical memory management, interrupts, timer-driven scheduling, system-call boundaries, storage abstractions, and low-level hardware interaction.
 
-The repository deliberately separates the `no_std` kernel from the host-side image builder. Kernel code stays platform-focused while the host crate handles boot-image creation and QEMU execution.
+The repository separates the `no_std` kernel from the host-side image builder. Kernel code stays platform-focused while the host crate handles boot-image creation and QEMU execution.
 
 ## Project Preview
 
 ORBIT boots a real kernel image under QEMU and reports subsystem state through a COM1 serial console. A framebuffer console also displays the initial kernel status directly in the guest.
 
-A successful boot currently exercises:
+A successful boot exercises:
 
 - x86_64 bare-metal kernel entry
 - physical memory-map discovery and 4 KiB frame allocation
@@ -59,8 +59,6 @@ A successful boot currently exercises:
                     │ Boot-time checks   │
                     │ + QEMU validation  │
                     └────────────────────┘
-                              │
-                        Future user space
 ```
 
 ## Core Features
@@ -222,7 +220,7 @@ The exact memory totals can vary between runs because they depend on the boot en
 
 ## CI
 
-GitHub Actions installs the pinned nightly toolchain configuration, runs Rust formatting, and builds the OS image on pushes and pull requests targeting `main`.
+GitHub Actions installs the repository's nightly toolchain configuration, checks Rust formatting, and builds the workspace on pushes and pull requests targeting `main`.
 
 Local validation should use the same basic commands:
 
@@ -231,30 +229,13 @@ cargo fmt --all
 cargo build --release -p orbit-os
 ```
 
-## Current Status
+## Engineering Notes
 
 **Functional bare-metal kernel foundation.**
 
-The current milestone is complete for the implemented foundation layer: ORBIT boots under QEMU, initializes its core hardware-facing subsystems, runs the boot-time self-test successfully, and remains active with interrupts enabled.
+The implemented foundation boots under QEMU, initializes its core hardware-facing subsystems, runs the boot-time self-test successfully, and remains active with interrupts enabled.
 
-This is intentionally not presented as a finished general-purpose operating system. The scheduler is currently a model rather than a hardware context-switching implementation, the syscall layer is an ABI/dispatcher foundation rather than a completed ring-3 transition, and storage is currently RAM-backed rather than persistent.
-
-## Next Kernel Layers
-
-The architecture leaves a clear path toward a more complete operating system:
-
-- [ ] Page-table mapper and virtual-memory primitives
-- [ ] Kernel heap allocator
-- [ ] Real context switching
-- [ ] Preemptive task execution
-- [ ] `syscall`/`sysret` user-kernel transition
-- [ ] Ring-3 user processes
-- [ ] Persistent block-device driver
-- [ ] Filesystem
-- [ ] Executable loader
-- [ ] Interactive shell
-- [ ] Initial user programs
-- [ ] Additional device drivers and networking
+The current implementation intentionally focuses on kernel foundations. The scheduler is a model rather than a hardware context-switching implementation, the syscall layer is an ABI/dispatcher foundation rather than a completed ring-3 transition, and storage is RAM-backed rather than persistent.
 
 ## Engineering Principles
 
@@ -262,14 +243,8 @@ The architecture leaves a clear path toward a more complete operating system:
 - **Explicit ownership** — shared kernel state has a defined synchronization and lifetime model.
 - **Incremental validation** — each subsystem should leave the workspace buildable and the kernel bootable.
 - **Observable execution** — framebuffer output is human-readable while COM1 output is deterministic and script-friendly.
-- **Architecture-first design** — memory, interrupts, execution, storage, and future user space communicate through narrow interfaces.
+- **Architecture-first design** — memory, interrupts, execution, and storage communicate through narrow interfaces.
 - **Failure visibility** — fatal CPU faults are logged and halted instead of silently rebooting the guest.
-
-## Project Direction
-
-ORBIT is intentionally a kernel project rather than a desktop environment. The goal is to make the machine/software boundary explicit: boot the processor, understand physical memory, establish interrupt handling, schedule execution, define a syscall boundary, add storage, and eventually run isolated user programs.
-
-The project favors a smaller amount of real kernel mechanism over a large collection of superficial features. Each milestone should make the system easier to inspect, debug, validate, and extend.
 
 ## Author
 
