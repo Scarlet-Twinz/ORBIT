@@ -4,6 +4,7 @@ fn main() -> ExitCode {
     let image = env!("ORBIT_BIOS_IMAGE");
 
     println!("ORBIT OS image: {image}");
+    println!("Launching QEMU...");
 
     match Command::new("qemu-system-x86_64")
         .args([
@@ -11,6 +12,7 @@ fn main() -> ExitCode {
             &format!("format=raw,file={image}"),
             "-serial",
             "stdio",
+            "-no-reboot",
         ])
         .status()
     {
@@ -21,9 +23,9 @@ fn main() -> ExitCode {
         Err(error) => {
             eprintln!("Unable to start QEMU: {error}");
             eprintln!(
-                "Build succeeded. Install QEMU and make qemu-system-x86_64 available on PATH to boot ORBIT."
+                "Build succeeded, but QEMU is not available on PATH. Install QEMU and make qemu-system-x86_64 available."
             );
-            ExitCode::SUCCESS
+            ExitCode::FAILURE
         }
     }
 }
