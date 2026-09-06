@@ -118,6 +118,7 @@ fn put_pixel(x: usize, y: usize, r: u8, g: u8, b: u8) {
     }
 }
 
+#[rustfmt::skip]
 fn glyph(byte: u8) -> [u8; GLYPH_H] {
     let c = byte.to_ascii_uppercase();
     match c {
