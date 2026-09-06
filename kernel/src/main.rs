@@ -20,6 +20,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     serial::init();
     serial_println!("ORBIT kernel starting");
 
+    memory::init(&boot_info.memory_regions);
     vga::init(boot_info);
     vga::write_line(0, b"ORBIT Kernel v0.2");
     vga::write_line(1, b"Boot successful.");
@@ -31,7 +32,6 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     vga::write_line(8, b"Storage: block-device layer");
     vga::write_line(10, b"Serial console: COM1");
 
-    memory::init(boot_info);
     interrupts::init();
     interrupts::init_pit(100);
     tasks::init();
