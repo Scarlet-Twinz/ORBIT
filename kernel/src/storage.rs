@@ -8,16 +8,8 @@ pub enum StorageError {
 
 pub trait BlockDevice {
     fn block_count(&self) -> u64;
-    fn read_block(
-        &self,
-        block: u64,
-        buffer: &mut [u8; BLOCK_SIZE],
-    ) -> Result<(), StorageError>;
-    fn write_block(
-        &mut self,
-        block: u64,
-        buffer: &[u8; BLOCK_SIZE],
-    ) -> Result<(), StorageError>;
+    fn read_block(&self, block: u64, buffer: &mut [u8; BLOCK_SIZE]) -> Result<(), StorageError>;
+    fn write_block(&mut self, block: u64, buffer: &[u8; BLOCK_SIZE]) -> Result<(), StorageError>;
 }
 
 pub struct RamDisk<const BLOCKS: usize> {
@@ -37,22 +29,14 @@ impl<const BLOCKS: usize> BlockDevice for RamDisk<BLOCKS> {
         BLOCKS as u64
     }
 
-    fn read_block(
-        &self,
-        block: u64,
-        buffer: &mut [u8; BLOCK_SIZE],
-    ) -> Result<(), StorageError> {
+    fn read_block(&self, block: u64, buffer: &mut [u8; BLOCK_SIZE]) -> Result<(), StorageError> {
         let index = usize::try_from(block).map_err(|_| StorageError::OutOfRange)?;
         let source = self.blocks.get(index).ok_or(StorageError::OutOfRange)?;
         buffer.copy_from_slice(source);
         Ok(())
     }
 
-    fn write_block(
-        &mut self,
-        block: u64,
-        buffer: &[u8; BLOCK_SIZE],
-    ) -> Result<(), StorageError> {
+    fn write_block(&mut self, block: u64, buffer: &[u8; BLOCK_SIZE]) -> Result<(), StorageError> {
         let index = usize::try_from(block).map_err(|_| StorageError::OutOfRange)?;
         let destination = self.blocks.get_mut(index).ok_or(StorageError::OutOfRange)?;
         destination.copy_from_slice(buffer);
