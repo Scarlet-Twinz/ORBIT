@@ -58,8 +58,8 @@ pub fn init() {
     let mut scheduler = SCHEDULER.lock();
     let idle = scheduler.spawn();
     let bootstrap = scheduler.spawn();
-    if let Some(id) = idle { serial_println!("task: created idle task id={}", id.0); }
-    if let Some(id) = bootstrap { serial_println!("task: created kernel task id={}", id.0); }
+    if let Some(id) = idle { crate::serial_println!("task: created idle task id={}", id.0); }
+    if let Some(id) = bootstrap { crate::serial_println!("task: created kernel task id={}", id.0); }
 }
 
 pub fn on_timer_tick() {
@@ -71,5 +71,5 @@ pub fn spawn_kernel_task() -> Option<TaskId> { SCHEDULER.lock().spawn() }
 pub fn ready_tasks() -> usize { SCHEDULER.lock().ready_count() }
 
 pub fn describe() {
-    serial_println!("scheduler: ready_tasks={} ticks={}", ready_tasks(), SCHEDULE_TICKS.load(Ordering::Relaxed));
+    crate::serial_println!("scheduler: ready_tasks={} ticks={}", ready_tasks(), SCHEDULE_TICKS.load(Ordering::Relaxed));
 }
