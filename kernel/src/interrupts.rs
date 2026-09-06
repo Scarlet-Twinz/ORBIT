@@ -19,8 +19,8 @@ pub fn init() {
         idt.breakpoint.set_handler_fn(breakpoint_handler);
         idt.page_fault.set_handler_fn(page_fault_handler);
         idt.double_fault.set_handler_fn(double_fault_handler);
-        idt[usize::from(TIMER_VECTOR)].set_handler_fn(timer_handler);
-        idt[usize::from(KEYBOARD_VECTOR)].set_handler_fn(keyboard_handler);
+        idt[TIMER_VECTOR].set_handler_fn(timer_handler);
+        idt[KEYBOARD_VECTOR].set_handler_fn(keyboard_handler);
         idt
     });
     idt.load();
