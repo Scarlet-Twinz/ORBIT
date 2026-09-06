@@ -1,7 +1,12 @@
 use bootloader_api::{info::FrameBufferInfo, BootInfo};
+use spin::Mutex;
 
-static mut FRAMEBUFFER: Option<&'static mut [u8]> = None;
-static mut INFO: Option<FrameBufferInfo> = None;
+struct Framebuffer {
+    buffer: &'static mut [u8],
+    info: FrameBufferInfo,
+}
+
+static FRAMEBUFFER: Mutex<Option<Framebuffer>> = Mutex::new(None);
 
 const GLYPH_W: usize = 5;
 const GLYPH_H: usize = 7;
@@ -13,27 +18,26 @@ pub fn init(boot_info: &'static mut BootInfo) {
         return;
     };
 
-    unsafe {
-        INFO = Some(framebuffer.info());
-        FRAMEBUFFER = Some(framebuffer.into_buffer());
-    }
+    let info = framebuffer.info();
+    let buffer = framebuffer.into_buffer();
+
+    *FRAMEBUFFER.lock() = Some(Framebuffer { buffer, info });
 
     clear();
 }
 
 pub fn clear() {
-    unsafe {
-        let Some(buffer) = FRAMEBUFFER.as_mut() else {
-            return;
-        };
-        let Some(info) = INFO else {
-            return;
-        };
+    let mut framebuffer = FRAMEBUFFER.lock();
+    let Some(framebuffer) = framebuffer.as_mut() else {
+        return;
+    };
 
-        for pixel in buffer.chunks_exact_mut(info.bytes_per_pixel) {
-            for byte in pixel.iter_mut() {
-                *byte = 0;
-            }
+    for pixel in framebuffer
+        .buffer
+        .chunks_exact_mut(framebuffer.info.bytes_per_pixel)
+    {
+        for byte in pixel.iter_mut() {
+            *byte = 0;
         }
     }
 }
@@ -52,7 +56,11 @@ pub fn write_line(row: usize, text: &[u8]) {
 }
 
 fn width() -> usize {
-    unsafe { INFO.map(|info| info.width).unwrap_or(0) }
+    FRAMEBUFFER
+        .lock()
+        .as_ref()
+        .map(|framebuffer| framebuffer.info.width)
+        .unwrap_or(0)
 }
 
 fn draw_char(x: usize, y: usize, byte: u8) {
@@ -73,40 +81,38 @@ fn draw_char(x: usize, y: usize, byte: u8) {
 }
 
 fn put_pixel(x: usize, y: usize, r: u8, g: u8, b: u8) {
-    unsafe {
-        let Some(buffer) = FRAMEBUFFER.as_mut() else {
-            return;
-        };
-        let Some(info) = INFO else {
-            return;
-        };
-        if x >= info.width || y >= info.height {
-            return;
-        }
+    let mut framebuffer = FRAMEBUFFER.lock();
+    let Some(framebuffer) = framebuffer.as_mut() else {
+        return;
+    };
 
-        let offset = (y * info.stride + x) * info.bytes_per_pixel;
-        if offset + info.bytes_per_pixel > buffer.len() {
-            return;
-        }
+    let info = framebuffer.info;
+    if x >= info.width || y >= info.height {
+        return;
+    }
 
-        match info.pixel_format {
-            bootloader_api::info::PixelFormat::Rgb => {
-                buffer[offset] = r;
-                buffer[offset + 1] = g;
-                buffer[offset + 2] = b;
-            }
-            bootloader_api::info::PixelFormat::Bgr => {
-                buffer[offset] = b;
-                buffer[offset + 1] = g;
-                buffer[offset + 2] = r;
-            }
-            bootloader_api::info::PixelFormat::U8 => {
-                buffer[offset] = r;
-            }
-            _ => {
-                for byte in &mut buffer[offset..offset + info.bytes_per_pixel] {
-                    *byte = 255;
-                }
+    let offset = (y * info.stride + x) * info.bytes_per_pixel;
+    if offset + info.bytes_per_pixel > framebuffer.buffer.len() {
+        return;
+    }
+
+    match info.pixel_format {
+        bootloader_api::info::PixelFormat::Rgb => {
+            framebuffer.buffer[offset] = r;
+            framebuffer.buffer[offset + 1] = g;
+            framebuffer.buffer[offset + 2] = b;
+        }
+        bootloader_api::info::PixelFormat::Bgr => {
+            framebuffer.buffer[offset] = b;
+            framebuffer.buffer[offset + 1] = g;
+            framebuffer.buffer[offset + 2] = r;
+        }
+        bootloader_api::info::PixelFormat::U8 => {
+            framebuffer.buffer[offset] = r;
+        }
+        _ => {
+            for byte in &mut framebuffer.buffer[offset..offset + info.bytes_per_pixel] {
+                *byte = 255;
             }
         }
     }
