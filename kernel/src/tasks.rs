@@ -7,10 +7,19 @@ const MAX_TASKS: usize = 32;
 pub struct TaskId(u64);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TaskState { Ready, Running, Blocked, Exited }
+pub enum TaskState {
+    Ready,
+    Running,
+    Blocked,
+    Exited,
+}
 
 #[derive(Clone, Copy, Debug)]
-pub struct TaskControlBlock { pub id: TaskId, pub state: TaskState, pub ticks: u64 }
+pub struct TaskControlBlock {
+    pub id: TaskId,
+    pub state: TaskState,
+    pub ticks: u64,
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Scheduler {
@@ -20,19 +29,32 @@ pub struct Scheduler {
 }
 
 impl Scheduler {
-    const fn new() -> Self { Self { tasks: [None; MAX_TASKS], next_id: 1, current: 0 } }
+    const fn new() -> Self {
+        Self {
+            tasks: [None; MAX_TASKS],
+            next_id: 1,
+            current: 0,
+        }
+    }
 
     fn spawn(&mut self) -> Option<TaskId> {
         let slot = self.tasks.iter().position(Option::is_none)?;
         let id = TaskId(self.next_id);
         self.next_id += 1;
-        self.tasks[slot] = Some(TaskControlBlock { id, state: TaskState::Ready, ticks: 0 });
+        self.tasks[slot] = Some(TaskControlBlock {
+            id,
+            state: TaskState::Ready,
+            ticks: 0,
+        });
         Some(id)
     }
 
     fn tick(&mut self) {
         if let Some(task) = self.tasks[self.current].as_mut() {
-            if task.state == TaskState::Running { task.ticks += 1; task.state = TaskState::Ready; }
+            if task.state == TaskState::Running {
+                task.ticks += 1;
+                task.state = TaskState::Ready;
+            }
         }
         for offset in 1..=MAX_TASKS {
             let slot = (self.current + offset) % MAX_TASKS;
@@ -47,7 +69,11 @@ impl Scheduler {
     }
 
     fn ready_count(&self) -> usize {
-        self.tasks.iter().flatten().filter(|task| matches!(task.state, TaskState::Ready | TaskState::Running)).count()
+        self.tasks
+            .iter()
+            .flatten()
+            .filter(|task| matches!(task.state, TaskState::Ready | TaskState::Running))
+            .count()
     }
 }
 
@@ -58,8 +84,12 @@ pub fn init() {
     let mut scheduler = SCHEDULER.lock();
     let idle = scheduler.spawn();
     let bootstrap = scheduler.spawn();
-    if let Some(id) = idle { crate::serial_println!("task: created idle task id={}", id.0); }
-    if let Some(id) = bootstrap { crate::serial_println!("task: created kernel task id={}", id.0); }
+    if let Some(id) = idle {
+        crate::serial_println!("task: created idle task id={}", id.0);
+    }
+    if let Some(id) = bootstrap {
+        crate::serial_println!("task: created kernel task id={}", id.0);
+    }
 }
 
 pub fn on_timer_tick() {
@@ -67,9 +97,17 @@ pub fn on_timer_tick() {
     SCHEDULER.lock().tick();
 }
 
-pub fn spawn_kernel_task() -> Option<TaskId> { SCHEDULER.lock().spawn() }
-pub fn ready_tasks() -> usize { SCHEDULER.lock().ready_count() }
+pub fn spawn_kernel_task() -> Option<TaskId> {
+    SCHEDULER.lock().spawn()
+}
+pub fn ready_tasks() -> usize {
+    SCHEDULER.lock().ready_count()
+}
 
 pub fn describe() {
-    crate::serial_println!("scheduler: ready_tasks={} ticks={}", ready_tasks(), SCHEDULE_TICKS.load(Ordering::Relaxed));
+    crate::serial_println!(
+        "scheduler: ready_tasks={} ticks={}",
+        ready_tasks(),
+        SCHEDULE_TICKS.load(Ordering::Relaxed)
+    );
 }
