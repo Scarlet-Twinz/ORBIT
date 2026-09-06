@@ -1,5 +1,4 @@
 use bootloader_api::info::{MemoryRegion, MemoryRegionKind};
-use bootloader_api::BootInfo;
 use spin::Mutex;
 use x86_64::structures::paging::{FrameAllocator, PhysFrame, Size4KiB};
 use x86_64::PhysAddr;
@@ -21,9 +20,7 @@ struct PhysicalAllocator {
 impl PhysicalAllocator {
     const EMPTY: UsableRange = UsableRange { next: 0, end: 0 };
 
-    const fn new() -> Self {
-        Self { ranges: [Self::EMPTY; MAX_RANGES], range_count: 0, current: 0, allocated: 0 }
-    }
+    const fn new() -> Self { Self { ranges: [Self::EMPTY; MAX_RANGES], range_count: 0, current: 0, allocated: 0 } }
 
     fn initialize(&mut self, regions: &[MemoryRegion]) {
         *self = Self::new();
@@ -52,9 +49,7 @@ impl PhysicalAllocator {
         None
     }
 
-    fn remaining_bytes(&self) -> u64 {
-        self.ranges[..self.range_count].iter().map(|range| range.end - range.next).sum()
-    }
+    fn remaining_bytes(&self) -> u64 { self.ranges[..self.range_count].iter().map(|range| range.end - range.next).sum() }
 }
 
 unsafe impl FrameAllocator<Size4KiB> for PhysicalAllocator {
@@ -63,10 +58,10 @@ unsafe impl FrameAllocator<Size4KiB> for PhysicalAllocator {
 
 static ALLOCATOR: Mutex<PhysicalAllocator> = Mutex::new(PhysicalAllocator::new());
 
-pub fn init(boot_info: &'static mut BootInfo) {
+pub fn init(regions: &[MemoryRegion]) {
     let mut allocator = ALLOCATOR.lock();
-    allocator.initialize(&boot_info.memory_regions);
-    serial_println!("memory: usable_regions={} remaining_bytes={}", allocator.range_count, allocator.remaining_bytes());
+    allocator.initialize(regions);
+    crate::serial_println!("memory: usable_regions={} remaining_bytes={}", allocator.range_count, allocator.remaining_bytes());
 }
 
 pub fn allocate_frame() -> Option<PhysFrame<Size4KiB>> { ALLOCATOR.lock().allocate_next() }
@@ -75,7 +70,7 @@ pub fn remaining_bytes() -> u64 { ALLOCATOR.lock().remaining_bytes() }
 
 pub fn describe() {
     let allocator = ALLOCATOR.lock();
-    serial_println!("memory: ranges={} allocated_frames={} remaining_bytes={}", allocator.range_count, allocator.allocated, allocator.remaining_bytes());
+    crate::serial_println!("memory: ranges={} allocated_frames={} remaining_bytes={}", allocator.range_count, allocator.allocated, allocator.remaining_bytes());
 }
 
 const fn align_up(value: u64, alignment: u64) -> u64 { (value + alignment - 1) & !(alignment - 1) }
