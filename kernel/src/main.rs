@@ -5,6 +5,7 @@
 mod interrupts;
 mod keyboard;
 mod memory;
+mod selftest;
 mod serial;
 mod storage;
 mod syscall;
@@ -39,6 +40,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     syscall::describe();
     memory::describe();
     tasks::describe();
+    selftest::run();
 
     serial_println!("ORBIT kernel initialized");
     serial_println!("architecture=x86_64");
@@ -50,16 +52,21 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     serial_println!("scheduler=round-robin-model");
     serial_println!("syscall=abi-foundation");
     serial_println!("storage=block-device-foundation");
+    serial_println!("selftest=enabled");
     serial_println!("serial=com1");
 
     interrupts::enable();
     serial_println!("interrupts: enabled");
 
-    loop { hlt(); }
+    loop {
+        hlt();
+    }
 }
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     serial_println!("kernel panic");
-    loop { hlt(); }
+    loop {
+        hlt();
+    }
 }
