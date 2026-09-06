@@ -9,7 +9,7 @@ const SCALE: usize = 3;
 const LINE_HEIGHT: usize = 28;
 
 pub fn init(boot_info: &'static mut BootInfo) {
-    let Some(framebuffer) = boot_info.framebuffer.into_option() else {
+    let Some(framebuffer) = boot_info.framebuffer.take().into_option() else {
         return;
     };
 
