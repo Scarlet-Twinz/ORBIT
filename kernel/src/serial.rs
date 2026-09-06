@@ -1,5 +1,5 @@
-use core::fmt;
 use core::arch::asm;
+use core::fmt;
 
 pub fn init() {
     unsafe {
