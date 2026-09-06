@@ -24,24 +24,24 @@ pub fn init() {
     idt.load();
     unmask_irq(0);
     unmask_irq(1);
-    serial_println!("interrupts: IDT loaded, PIC remapped, IRQ0/IRQ1 enabled");
+    crate::serial_println!("interrupts: IDT loaded, PIC remapped, IRQ0/IRQ1 enabled");
 }
 
 pub fn enable() { cpu_interrupts::enable(); }
 pub fn ticks() -> u64 { TICKS.load(Ordering::Relaxed) }
 
 extern "x86-interrupt" fn breakpoint_handler(_frame: InterruptStackFrame) {
-    serial_println!("interrupt: breakpoint");
+    crate::serial_println!("interrupt: breakpoint");
 }
 
 extern "x86-interrupt" fn page_fault_handler(frame: InterruptStackFrame, error_code: PageFaultErrorCode) {
     let address = Cr2::read();
-    serial_println!("fatal: page fault addr={:#x} error={:?} ip={:#x}", address.as_u64(), error_code, frame.instruction_pointer.as_u64());
+    crate::serial_println!("fatal: page fault addr={:#x} error={:?} ip={:#x}", address.as_u64(), error_code, frame.instruction_pointer.as_u64());
     halt_forever();
 }
 
 extern "x86-interrupt" fn double_fault_handler(_frame: InterruptStackFrame, error_code: u64) -> ! {
-    serial_println!("fatal: double fault error={:#x}", error_code);
+    crate::serial_println!("fatal: double fault error={:#x}", error_code);
     halt_forever()
 }
 
@@ -99,5 +99,5 @@ pub fn init_pit(hz: u32) {
         channel0.write((divisor & 0xFF) as u8);
         channel0.write((divisor >> 8) as u8);
     }
-    serial_println!("timer: PIT configured at {} Hz", hz.max(1));
+    crate::serial_println!("timer: PIT configured at {} Hz", hz.max(1));
 }
