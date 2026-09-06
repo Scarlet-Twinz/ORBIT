@@ -35,5 +35,5 @@ impl<const BLOCKS: usize> BlockDevice for RamDisk<BLOCKS> {
 
 pub fn init() {
     let disk = RamDisk::<8>::new();
-    serial_println!("storage: block-device ABI ready block_size={} blocks={}", BLOCK_SIZE, disk.block_count());
+    crate::serial_println!("storage: block-device ABI ready block_size={} blocks={}", BLOCK_SIZE, disk.block_count());
 }
