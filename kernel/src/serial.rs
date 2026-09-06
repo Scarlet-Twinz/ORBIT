@@ -28,6 +28,6 @@ macro_rules! serial_println {
         $crate::serial::_print(format_args!("\n"))
     };
     ($($arg:tt)*) => {
-        $crate::serial::_print(format_args!(concat!($($arg)*, "\n")))
+        $crate::serial::_print(format_args!("{}\n", format_args!($($arg)*)))
     };
 }
