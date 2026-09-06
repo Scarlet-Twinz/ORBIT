@@ -1,14 +1,3 @@
-[package]
-name = "orbit-kernel"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-bootloader_api = "0.11.10"
-
-[build-dependencies]
-bootloader = "0.11.10"
-
-[[bin]]
-name = "orbit"
-path = "src/main.rs"
+[workspace]
+resolver = "2"
+members = ["os", "kernel"]
