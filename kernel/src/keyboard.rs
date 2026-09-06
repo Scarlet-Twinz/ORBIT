@@ -1,7 +1,9 @@
 const SCAN_CODE_RELEASE: u8 = 0x80;
 
 pub fn handle_scancode(scancode: u8) {
-    if scancode & SCAN_CODE_RELEASE != 0 { return; }
+    if scancode & SCAN_CODE_RELEASE != 0 {
+        return;
+    }
     match scancode {
         0x1C => crate::serial_println!("keyboard: enter"),
         0x01 => crate::serial_println!("keyboard: escape"),
