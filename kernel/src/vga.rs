@@ -9,7 +9,7 @@ const SCALE: usize = 3;
 const LINE_HEIGHT: usize = 28;
 
 pub fn init(boot_info: &'static mut BootInfo) {
-    let Some(framebuffer) = boot_info.framebuffer.take().into_option() else {
+    let Some(framebuffer) = boot_info.framebuffer.into_option() else {
         return;
     };
 
@@ -103,7 +103,7 @@ fn put_pixel(x: usize, y: usize, r: u8, g: u8, b: u8) {
             bootloader_api::info::PixelFormat::U8 => {
                 buffer[offset] = r;
             }
-            bootloader_api::info::PixelFormat::Unknown { .. } => {
+            _ => {
                 for byte in &mut buffer[offset..offset + info.bytes_per_pixel] {
                     *byte = 255;
                 }
