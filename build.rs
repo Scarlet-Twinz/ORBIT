@@ -1,7 +1,8 @@
 use std::{env, path::PathBuf};
 
 fn main() {
-    let kernel = PathBuf::from(env::var_os("CARGO_BIN_FILE_ORBIT").expect("kernel binary path missing"));
+    let kernel =
+        PathBuf::from(env::var_os("CARGO_BIN_FILE_ORBIT").expect("kernel binary path missing"));
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR missing"));
 
     let bios_image = out_dir.join("orbit-bios.img");
