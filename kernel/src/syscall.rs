@@ -22,5 +22,5 @@ pub fn dispatch(number: u64, arg0: u64, _arg1: u64, _arg2: u64) -> SyscallResult
 pub fn count() -> u64 { SYSCALLS.load(Ordering::Relaxed) }
 
 pub fn describe() {
-    serial_println!("syscall: ABI=register-contract calls={}", count());
+    crate::serial_println!("syscall: ABI=register-contract calls={}", count());
 }
