@@ -8,10 +8,11 @@ use bootloader_api::{entry_point, BootInfo};
 
 entry_point!(kernel_main);
 
-fn kernel_main(_boot_info: &'static mut BootInfo) -> ! {
+fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     serial::init();
-    vga::clear();
+    serial_println!("ORBIT kernel starting");
 
+    vga::init(boot_info);
     vga::write_line(0, b"ORBIT Kernel v0.1");
     vga::write_line(1, b"Boot successful.");
     vga::write_line(3, b"Architecture: x86_64");
