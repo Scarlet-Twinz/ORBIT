@@ -2,9 +2,7 @@ use core::sync::atomic::{AtomicU64, Ordering};
 use spin::Once;
 use x86_64::instructions::{hlt, interrupts as cpu_interrupts, port::Port};
 use x86_64::registers::control::Cr2;
-use x86_64::structures::idt::{
-    InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode,
-};
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode};
 
 pub const TIMER_VECTOR: u8 = 32;
 pub const KEYBOARD_VECTOR: u8 = 33;
@@ -62,10 +60,7 @@ extern "x86-interrupt" fn page_fault_handler(
     halt_forever();
 }
 
-extern "x86-interrupt" fn double_fault_handler(
-    _frame: InterruptStackFrame,
-    error_code: u64,
-) -> ! {
+extern "x86-interrupt" fn double_fault_handler(_frame: InterruptStackFrame, error_code: u64) -> ! {
     crate::serial_println!("fatal: double fault error={:#x}", error_code);
     halt_forever()
 }
