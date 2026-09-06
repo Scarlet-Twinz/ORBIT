@@ -18,10 +18,10 @@ jobs:
         with:
           toolchain: nightly
           targets: x86_64-unknown-none
-          components: rust-src, llvm-tools-preview
+          components: rust-src, llvm-tools-preview, rustfmt, clippy
 
       - name: Format
         run: cargo fmt --all -- --check
 
-      - name: Build kernel
-        run: cargo build --release
+      - name: Build OS and kernel
+        run: cargo build --release -p orbit-os
