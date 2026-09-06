@@ -8,7 +8,10 @@ pub const SYS_GET_TICKS: u64 = 4;
 static SYSCALLS: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SyscallResult { Value(u64), Unsupported }
+pub enum SyscallResult {
+    Value(u64),
+    Unsupported,
+}
 
 pub fn dispatch(number: u64, arg0: u64, _arg1: u64, _arg2: u64) -> SyscallResult {
     SYSCALLS.fetch_add(1, Ordering::Relaxed);
@@ -19,7 +22,9 @@ pub fn dispatch(number: u64, arg0: u64, _arg1: u64, _arg2: u64) -> SyscallResult
     }
 }
 
-pub fn count() -> u64 { SYSCALLS.load(Ordering::Relaxed) }
+pub fn count() -> u64 {
+    SYSCALLS.load(Ordering::Relaxed)
+}
 
 pub fn describe() {
     crate::serial_println!("syscall: ABI=register-contract calls={}", count());
