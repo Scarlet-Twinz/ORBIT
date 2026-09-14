@@ -1,142 +1,109 @@
 # ORBIT
 
-**A small x86_64 operating-system kernel written from scratch in Rust.**
+**Small x86_64 operating-system kernel written from scratch in Rust.**
 
-ORBIT is a bare-metal systems project focused on the mechanisms beneath application software: bootstrapping, physical memory management, interrupts, timer-driven scheduling, system-call boundaries, storage abstractions, and low-level hardware interaction.
+ORBIT is a bare-metal systems project focused on the mechanisms beneath application software: bootstrapping, physical memory management, interrupts, timer-driven scheduling, system-call boundaries, storage abstractions, and hardware-facing I/O.
 
-The repository separates the `no_std` kernel from the host-side image builder. Kernel code stays platform-focused while the host crate handles boot-image creation and QEMU execution.
+The kernel is `no_std`. A separate host-side crate builds the boot image and launches it under QEMU.
 
-## Project Preview
-
-ORBIT boots a real kernel image under QEMU and reports subsystem state through a COM1 serial console. A framebuffer console also displays the initial kernel status directly in the guest.
-
-A successful boot exercises:
-
-- x86_64 bare-metal kernel entry
-- physical memory-map discovery and 4 KiB frame allocation
-- IDT exception handling and PIC IRQ routing
-- PIT timer interrupts at 100 Hz
-- PS/2 keyboard IRQ handling
-- scheduler/task-state bookkeeping
-- register-based syscall dispatch
-- block-device and RAM-disk operations
-- boot-time subsystem self-tests
-
-## Architecture
+## Boot Path
 
 ```text
-                         Host / Cargo
-                              │
-                         orbit-os crate
-                              │
-                       BIOS disk image
-                              │
-                         bootloader
-                              │
-                    ┌─────────▼─────────┐
-                    │    ORBIT Kernel   │
-                    │ x86_64 / no_std   │
-                    └─────────┬─────────┘
-                              │
-              ┌───────────────┴────────────────┐
-              │                                │
-        Framebuffer                         COM1 serial
-          console                            diagnostics
-              │                                │
-              └───────────────┬────────────────┘
-                              │
-                     Kernel subsystems
-                              │
-       ┌──────────────┬───────┼────────┬──────────────┐
-       │              │       │        │              │
-    Memory        Interrupts Tasks   Syscalls      Storage
-       │              │       │        │              │
-       └──────────────┴───────┼────────┴──────────────┘
-                              │
-                         Self-test layer
-                              │
-                    ┌─────────▼─────────┐
-                    │ Boot-time checks   │
-                    │ + QEMU validation  │
-                    └────────────────────┘
+Host / Cargo
+     │
+     ▼
+Boot image builder
+     │
+     ▼
+BIOS bootloader
+     │
+     ▼
+ORBIT kernel
+x86_64 / no_std
+     │
+ ┌───┼───────────────┐
+ ▼   ▼       ▼       ▼
+Memory IRQs  Tasks  Syscalls
+ │     │      │       │
+ └─────┴──────┴───────┘
+           │
+           ▼
+        Storage
+           │
+           ▼
+      Boot self-tests
 ```
 
-## Core Features
+## Implemented Foundations
 
-### Boot and kernel foundation
+### Boot and kernel
 
 - Rust `no_std` kernel
 - `x86_64-unknown-none` target
 - BIOS bootloader integration
 - Kernel/host workspace separation
-- Framebuffer console with pixel-format handling
-- Synchronized framebuffer ownership
+- Framebuffer console
 - COM1 serial diagnostics
-- QEMU launch path with the guest remaining running after initialization
+- QEMU launch path
 
 ### Memory and interrupts
 
 - Bootloader memory-map inspection
 - Physical 4 KiB frame allocator
 - Interrupt Descriptor Table
-- CPU breakpoint, page-fault, and double-fault handlers
+- Breakpoint, page-fault, and double-fault handlers
 - PIC remapping
-- PIT timer configured for 100 Hz
+- PIT timer at 100 Hz
 - PS/2 keyboard IRQ path
 
-### Execution and system calls
+### Execution and syscalls
 
 - Task control blocks
 - Round-robin scheduler model
 - Timer-driven scheduler tick path
 - Register-based syscall contract
-- Syscall dispatcher with tick reporting
+- Syscall dispatcher
 
 ### Storage
 
 - Block-device trait abstraction
 - Fixed 512-byte block interface
-- In-memory RAM-disk implementation
+- RAM-disk implementation
 - Read/write and bounds-checking paths
 
-### Validation
+## Validation
 
-The kernel runs a boot-time self-test covering the implemented foundations:
+The kernel runs boot-time self-tests covering:
 
-- physical frame allocation
-- kernel task creation
-- RAM-disk write/read behavior
-- RAM-disk data integrity
-- RAM-disk range checking
-- syscall dispatch
-- aggregate subsystem self-test result
+- physical frame allocation;
+- task creation;
+- RAM-disk write/read/data integrity;
+- RAM-disk bounds checking;
+- syscall dispatch; and
+- aggregate subsystem state.
+
+A successful run emits deterministic serial output through COM1 while the framebuffer provides human-readable guest state.
 
 ## Repository Structure
 
 ```text
 ORBIT/
-├── .cargo/
-│   └── config.toml            # Bare-metal target and linker configuration
-├── .github/
-│   └── workflows/
-│       └── ci.yml             # Rust formatting and build validation
+├── .cargo/config.toml
 ├── kernel/
-│   ├── Cargo.toml             # no_std kernel crate
-│   └── src/
-│       ├── main.rs            # Kernel entry point and boot sequence
-│       ├── serial.rs          # COM1 serial console
-│       ├── vga.rs             # Framebuffer console renderer
-│       ├── memory.rs           # Physical frame allocator
-│       ├── interrupts.rs      # IDT, PIC, PIT, exceptions, and IRQs
-│       ├── keyboard.rs        # PS/2 keyboard input path
-│       ├── tasks.rs            # Task state and scheduler model
-│       ├── syscall.rs         # System-call ABI foundation
-│       ├── storage.rs         # Block-device abstraction and RAM disk
-│       └── selftest.rs        # Boot-time subsystem validation
+│   ├── src/main.rs
+│   ├── src/serial.rs
+│   ├── src/vga.rs
+│   ├── src/memory.rs
+│   ├── src/interrupts.rs
+│   ├── src/keyboard.rs
+│   ├── src/tasks.rs
+│   ├── src/syscall.rs
+│   ├── src/storage.rs
+│   └── src/selftest.rs
 ├── os/
-│   ├── Cargo.toml             # Host-side image builder and launcher
-│   ├── build.rs               # Creates the bootable BIOS image
-│   └── src/main.rs            # QEMU launcher
+│   ├── build.rs
+│   └── src/main.rs
+├── .github/workflows/ci.yml
 ├── Cargo.toml
 └── rust-toolchain.toml
 ```
@@ -145,10 +112,10 @@ ORBIT/
 
 | Layer | Technology |
 | --- | --- |
-| Kernel language | Rust `no_std` |
+| Kernel | Rust `no_std` |
 | Architecture | x86_64 |
 | Target | `x86_64-unknown-none` |
-| Boot | `bootloader` 0.11.x / BIOS |
+| Boot | bootloader 0.11.x / BIOS |
 | Architecture support | `x86_64` crate |
 | Synchronization | `spin` |
 | Serial | COM1 / 16550-compatible UART |
@@ -158,98 +125,57 @@ ORBIT/
 
 ## Getting Started
 
-### Prerequisites
-
-Install:
+Prerequisites:
 
 - Rust nightly
 - QEMU
 - Git
 
-The repository includes `rust-toolchain.toml`, so the required Rust target and components are selected automatically through rustup.
-
-### Clone
+The repository includes `rust-toolchain.toml` for the required Rust target/components.
 
 ```bash
 git clone https://github.com/Scarlet-Twinz/ORBIT.git
 cd ORBIT
-```
-
-### Format
-
-```bash
 cargo fmt --all
-```
-
-### Build
-
-```bash
 cargo build --release -p orbit-os
-```
-
-### Run
-
-```bash
 cargo run --release -p orbit-os
 ```
 
-The host crate builds the kernel, creates a bootable BIOS disk image, and launches `qemu-system-x86_64` with the serial console attached to the terminal.
+The host crate builds the kernel, creates a bootable BIOS image, and launches `qemu-system-x86_64` with serial output attached.
 
-## Validation Output
+## Engineering Boundaries
 
-A successful run reports the initialization path and then executes the kernel self-test. The expected signals include output similar to:
+ORBIT intentionally documents what it **does not yet claim**:
 
-```text
-ORBIT kernel starting
-memory: usable_regions=3 remaining_bytes=...
-interrupts: IDT loaded, PIC remapped, IRQ0/IRQ1 enabled
-timer: PIT configured at 100 Hz
-task: created idle task id=1
-task: created kernel task id=2
-storage: block-device ABI ready block_size=512 blocks=8
-selftest: physical-frame-allocation=true
-selftest: task-spawn=true
-selftest: ramdisk write=true read=true data=true range-check=true
-selftest: syscall-dispatch=true
-selftest: result=true frames=1 syscall_calls=2 ready_tasks=3
-ORBIT kernel initialized
-interrupts: enabled
-```
+- The scheduler is a model with timer-driven bookkeeping, not hardware context switching.
+- The syscall layer is an ABI/dispatcher foundation, not a completed ring-3 userspace transition.
+- Storage is RAM-backed, not persistent disk storage.
 
-The exact memory totals can vary between runs because they depend on the boot environment.
+These boundaries are important because the project is about building kernel foundations incrementally rather than presenting a partial mechanism as a finished operating system.
 
-## CI
-
-GitHub Actions installs the repository's nightly toolchain configuration, checks Rust formatting, and builds the workspace on pushes and pull requests targeting `main`.
-
-Local validation should use the same basic commands:
-
-```bash
-cargo fmt --all
-cargo build --release -p orbit-os
-```
-
-## Engineering Notes
+## Current State
 
 **Functional bare-metal kernel foundation.**
 
-The implemented foundation boots under QEMU, initializes its core hardware-facing subsystems, runs the boot-time self-test successfully, and remains active with interrupts enabled.
+The implemented foundation boots under QEMU, initializes its hardware-facing subsystems, runs the boot-time self-test, and remains active with interrupts enabled.
 
-The current implementation intentionally focuses on kernel foundations. The scheduler is a model rather than a hardware context-switching implementation, the syscall layer is an ABI/dispatcher foundation rather than a completed ring-3 transition, and storage is RAM-backed rather than persistent.
+CI validates formatting and the release build using the repository's nightly toolchain configuration.
 
 ## Engineering Principles
 
-- **Mechanism before abstraction** — understand and validate the low-level mechanism before hiding it behind a large framework.
-- **Explicit ownership** — shared kernel state has a defined synchronization and lifetime model.
-- **Incremental validation** — each subsystem should leave the workspace buildable and the kernel bootable.
-- **Observable execution** — framebuffer output is human-readable while COM1 output is deterministic and script-friendly.
-- **Architecture-first design** — memory, interrupts, execution, and storage communicate through narrow interfaces.
-- **Failure visibility** — fatal CPU faults are logged and halted instead of silently rebooting the guest.
+- **Mechanism before abstraction** — understand the low-level mechanism before hiding it.
+- **Explicit ownership** — shared kernel state has defined synchronization/lifetime boundaries.
+- **Incremental validation** — each subsystem should leave the kernel buildable and bootable.
+- **Observable execution** — framebuffer output is human-readable; serial output is deterministic.
+- **Architecture-first design** — subsystems communicate through narrow interfaces.
+- **Failure visibility** — fatal CPU faults are logged and halted instead of silently rebooting.
+
+## License
+
+MIT
 
 ## Author
 
 **Anthony Emmanuella Mmasinachi**
 
-Software developer focused on frontend engineering, backend systems, APIs, automation, databases, realtime applications, systems programming, and practical software architecture.
-
-**GitHub:** https://github.com/Scarlet-Twinz
+Full-stack and systems engineer focused on backend infrastructure, distributed systems, networking, compilers, operating systems, databases, AI integration, and systems programming.
