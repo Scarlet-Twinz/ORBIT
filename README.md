@@ -179,3 +179,9 @@ MIT
 **Anthony Emmanuella Mmasinachi**
 
 Full-stack and systems engineer focused on backend infrastructure, distributed systems, networking, compilers, operating systems, databases, AI integration, and systems programming.
+
+## Project Links
+
+- **Repository:** https://github.com/Scarlet-Twinz/ORBIT
+- **Author:** Anthony Emmanuella Mmasinachi
+- **GitHub:** https://github.com/Scarlet-Twinz
