@@ -1,4 +1,4 @@
-#  ORBIT
+# ORBIT
 
 **Small x86_64 operating-system kernel written from scratch in Rust.**
 
