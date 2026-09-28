@@ -170,21 +170,9 @@ CI validates formatting and the release build using the repository's nightly too
 - **Architecture-first design** — subsystems communicate through narrow interfaces.
 - **Failure visibility** — fatal CPU faults are logged and halted instead of silently rebooting.
 
+
 ## License
 
-MIT
+MIT License.
 
-
-The project documents its systems scope explicitly so the kernel implementation can be evaluated without implying capabilities that are not present.
-
-## Author
-
-**Anthony Emmanuella Mmasinachi**
-
-Full-stack and systems engineer focused on backend infrastructure, distributed systems, networking, compilers, operating systems, databases, AI integration, and systems programming.
-
-## Project Links
-
-- **Repository:** https://github.com/Scarlet-Twinz/ORBIT
-- **Author:** Anthony Emmanuella Mmasinachi
-- **GitHub:** https://github.com/Scarlet-Twinz
+See [LICENSE](LICENSE) for the full license text.
